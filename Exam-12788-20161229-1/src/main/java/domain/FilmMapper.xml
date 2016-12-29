@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="domain.Film">
+	<resultMap type="domain.Film" id="film">
+		<id property="id" column="language_id"/>
+		<result  property="title" column="title"/>
+		<result property="description" column="description"/>
+	</resultMap>
+	<!-- insert语句 -->
+	<insert id="add" parameterType="domain.Film">
+		insert into film(title,description,language_id)values(#{title},#{description},#{id})
+	</insert>
+</mapper>

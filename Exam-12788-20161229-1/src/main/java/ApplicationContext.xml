@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    	 http://www.springframework.org/schema/beans/spring-beans.xsd
+     	 http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop.xsd
+         http://www.springframework.org/schema/tx
+     	 http://www.springframework.org/schema/tx/spring-tx.xsd">
+     	 
+     	 
+     	 <!-- beforeinsertFilmEvent发布 -->
+     	 <bean id="Bpublisher" class="event.BeforeInsertFilmEventPublisher"></bean>
+     	 <!-- beforeinsertFilmEvent监听 -->
+     	 <bean id="Blistener" class="event.BeforeInsertFilmEventListener"></bean>
+     	 
+     	 <!-- AfterInsertFilmEvent发布 -->
+     	 <bean id="Apublisher" class="event.AfterInsertFilmEventPublisher"></bean>
+     	 <!-- AfterInsertFilmEvent监听 -->
+     	 <bean id="Alistener" class="event.AfterInsertFilmEventListener"></bean>
+     	 
+     	 <!-- aop对象  -->
+     	 <bean id="aop" class="aop.Aop"> 
+     	 	<property name="bpublisher" ref="Bpublisher"></property>
+     	 	<property name="apublisher" ref="Apublisher"></property>
+     	 </bean>
+     	 
+     	 <!--加载配置文件  -->
+     	 <context:property-placeholder location="classpath:dbconfig.properties" />
+     	 <!-- 配置c3p0连接池 -->
+     	 <bean id="comboPooledDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+     	 	<property name="driverClass" value="${driverclass}"></property>
+     	 	<property name="jdbcUrl" value="${url}"></property>
+     	 	<property name="user" value="${user}"></property>
+     	 	<property name="password" value="${password}"></property>
+     	 </bean>
+     	 <!-- 加载Mybetis配置文件和映射文件 -->
+     	 <bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+     	 	<property name="configLocation" value="classpath:Mybatis.xml"></property>
+     	 	<property name="dataSource" ref="comboPooledDataSource"></property>
+     	 </bean>
+     	 <!-- 配置Mybatis事务管理器-->
+     	 <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+     	 	<property name="dataSource" ref="comboPooledDataSource"></property>
+     	 </bean>
+     	 <!-- 事务加强 -->
+     	 <tx:advice id="txAdvice" transaction-manager="dataSourceTransactionManager">
+     	 	<tx:attributes>
+     	 		<tx:method name="*" propagation="REQUIRED"/>
+     	 	</tx:attributes>
+     	 </tx:advice>
+     	 <!-- aop配置 -->
+     	 <aop:config>
+     	 	<aop:pointcut expression="execution(*  dao.*.*(..))" id="pt"/>
+     	 	<aop:advisor advice-ref="txAdvice" pointcut-ref="pt"/>
+     	 	<aop:aspect ref="aop">
+     	 		<aop:before method="before" pointcut-ref="pt"/>
+     	 		<aop:after method="after" pointcut-ref="pt"/>
+     	 	</aop:aspect>
+     	 </aop:config>
+     	 
+     
+     	 <!-- application开启时输出 -->
+     	 <bean id="startEvent" class="event.StartEvent"> </bean>
+     	 <!-- application结束时输出 -->
+     	 <bean id="stopEvent" class="event.StopEvent"> </bean>
+     	 
+     	 
+     	 
+     	 <!-- 注册dao -->
+     	 <bean id="filmDao" class="dao.FilmDao">
+     	 	<property name="sqlSessionFactory" ref="sqlSessionFactoryBean"></property>
+     	 	<property name="aop" ref="aop"></property>
+     	 </bean>
+     	
+</beans>
